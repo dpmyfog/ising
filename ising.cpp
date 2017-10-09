@@ -3,6 +3,9 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <algorithm>
+#include <random>
 
 #include "ising.h"
 
@@ -12,9 +15,11 @@ Ising::Ising(int newsize, float newCouplingConst){
   couplingConst = newCouplingConst;
   size = newsize;
   configuration.resize(size, vector<int>(size, 0));
+  srand(time(NULL));
   for(int i = 0; i < size; i++){
     for(int j = 0; j <  size; j++){
-      configuration[i][j] = 1; //default to spin-up
+      if(rand()%2 == 0) configuration[i][j] = 1; //default to spin-up
+      else configuration[i][j] = -1;
     }
   }
 }
@@ -32,6 +37,25 @@ Ising::Ising(const Ising & other){
 }
 
 
+void Ising::printConfig(){
+  for(int row = 0; row < size; row++){
+    for(int col = 0; col < size; col++){
+      cout << configuration[row][col] << " ";
+    }
+    cout << endl;
+  }
+  cout << endl;
+}
+
+void Ising::reset(){
+  srand(time(NULL));
+  for(int i = 0; i < size; i++){
+    for(int j = 0; j <  size; j++){
+      if(rand()%2 == 0) configuration[i][j] = 1; //default to spin-up
+      else configuration[i][j] = -1;
+    }
+  }
+}
 
 
 /*
@@ -97,7 +121,86 @@ float Ising::getEnergy(){
       }
     }
   }
-  return totalEnergy;
+  return totalEnergy/2;
 }
 
+void Ising::flipSpin(int row, int col){
+  configuration[row][col] = configuration[row][col]*-1;
+}
+
+ 
+float Ising:: calculateMagSq(){
+  int numSpins = size*size;
+  int spinSum = 0;
+  for(int row = 0; row < size; row++){
+    for(int col = 0; col < size; col++){
+      spinSum += configuration[row][col];
+    }				     
+  }
+  return ((float)spinSum)*((float) spinSum) / numSpins / numSpins;
+}
+
+
+
+/**
+ * Calculate the probability to change into the configuration with the spin at [row][col] flipped
+ *
+ */
+
+float Ising::probToFlip(int row, int col, float beta){
+  Ising copy(*this);
+  copy.flipSpin(row, col);
+  float thisEnergy = getEnergy();
+  float otherEnergy = copy.getEnergy();
+  //cout << thisEnergy << endl;
+  //cout << otherEnergy << endl;
+  
+  float prob = exp(-1*beta*otherEnergy + 1*beta*thisEnergy);
+  return min(prob, 1.0f);
+}
+
+void Ising::simulate(int timesteps, float beta){
+  cout << "got into simulate" << endl;
+  int counter;
+  srand(time(NULL));
+  while(counter < timesteps){
+    //cout << "in first while" << endl;
+    int randRow = rand()%size;
+    int randCol = rand()%size;
+    float probFlip = probToFlip(randRow, randCol, beta);
+    //cout << "probability to flip " << probFlip << endl;
+    float randomNumber = rand()/(RAND_MAX + 1.);
+    if(randomNumber <= probFlip){ //flip spin
+      flipSpin(randRow, randCol);
+      counter++;
+    }
+    else{
+      //do nothing
+    }
+    //cout << "Magnetization Sq: " << calculateMagSq() << endl;
+    
+    
+  }
+  //printConfig();
+
+}
+
+float Ising::simulateMag(int timestep, int samples, float beta){
+  vector<float> magSq;
+  //cout << "made vector" << endl;
+  for(int i = 0; i < samples; i++){
+    //cout << i << endl;
+    simulate(timestep, beta);
+    //cout << "completed " << i << " simulation(s). m = " << calculateMagSq() <<  endl;
+    magSq.push_back(calculateMagSq());
+    //cout << "pushed to back" << endl;
+    reset();
+  }
+  float total = 0;
+  for(int i = 0; i < magSq.size(); i++){
+    total+=magSq[i];
+    //cout << total << endl;
+  }
+  return total/magSq.size();
+}
 
