@@ -160,9 +160,9 @@ float Ising::probToFlip(int row, int col, float beta){
 }
 
 void Ising::simulate(int timesteps, float beta){
-  cout << "got into simulate" << endl;
+  //cout << "got into simulate" << endl;
   int counter;
-  srand(time(NULL));
+  
   while(counter < timesteps){
     //cout << "in first while" << endl;
     int randRow = rand()%size;
@@ -187,6 +187,7 @@ void Ising::simulate(int timesteps, float beta){
 
 float Ising::simulateMag(int timestep, int samples, float beta){
   vector<float> magSq;
+  
   //cout << "made vector" << endl;
   for(int i = 0; i < samples; i++){
     //cout << i << endl;
@@ -194,7 +195,7 @@ float Ising::simulateMag(int timestep, int samples, float beta){
     //cout << "completed " << i << " simulation(s). m = " << calculateMagSq() <<  endl;
     magSq.push_back(calculateMagSq());
     //cout << "pushed to back" << endl;
-    reset();
+    //reset();
   }
   float total = 0;
   for(int i = 0; i < magSq.size(); i++){
