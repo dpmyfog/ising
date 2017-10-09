@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
+#include <fstream>
 
 #include "ising.h"
 
@@ -202,6 +203,16 @@ float Ising::simulateMag(int timestep, int samples, float beta){
     total+=magSq[i];
     //cout << total << endl;
   }
+  Ising::writeArrToFile("magSqs", magSq);
   return total/magSq.size();
 }
 
+void Ising::writeArrToFile(string filename, vector<float> myvec){
+  ofstream myfile;
+  myfile.open(filename);
+  for(int i = 0; i < myvec.size(); i++){
+    myfile << myvec[i] << endl;
+  }
+  myfile.close();
+  
+}
