@@ -34,10 +34,13 @@ class Ising {
 
   void simulate(int timesteps, float beta);
   float simulateMag(int timesteps, int samples, float beta);
-
+  
+  void recordSnapshot(string filename);
   void reset();
- 
+  
   static void writeArrToFile(string filename, vector<float> myvec);
+ 
+  static void makeConfigMap();
   
 
 };

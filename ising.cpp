@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <random>
 #include <fstream>
+#include <bitset>
+
+
 
 #include "ising.h"
 
@@ -216,3 +219,23 @@ void Ising::writeArrToFile(string filename, vector<float> myvec){
   myfile.close();
   
 }
+
+void Ising::recordSnapshot(string filename){
+  ofstream myfile;
+  myfile.open(filename);
+  for(int row = 0; row < size; row++){
+    for(int col = 0; col < size; col++){
+      myfile << configuration[row][col] << " ";
+    }
+    myfile << endl;
+  }
+
+  void Ising::makeConfigMap(){
+    //string bitstring = bitset<9>(config).to_string();
+    //stoi(
+  }
+    
+}
+
+
+
