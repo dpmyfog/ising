@@ -51,6 +51,14 @@ void Ising::printConfig(){
   cout << endl;
 }
 
+void Ising::setAllUp(){
+  for(int i = 0; i < size; i++){
+    for(int j = 0; j < size; j++){
+      configuration[i][j] = 1;
+    }
+  }
+}
+
 void Ising::reset(){
   srand(time(NULL));
   for(int i = 0; i < size; i++){
@@ -210,6 +218,7 @@ float Ising::simulateMag(int timestep, int samples, float beta){
   return total/magSq.size();
 }
 
+
 void Ising::writeArrToFile(string filename, vector<float> myvec){
   ofstream myfile;
   myfile.open(filename);
@@ -229,13 +238,32 @@ void Ising::recordSnapshot(string filename){
     }
     myfile << endl;
   }
-
-  void Ising::makeConfigMap(){
-    //string bitstring = bitset<9>(config).to_string();
-    //stoi(
-  }
-    
 }
+
+void Ising::makeConfigMap(){
+  Ising example(3, 1);
+  string filename = "configurationMap";
+  vector<float> energies;
+  for(int config = 0; config < 512; config++){
+    string bitstring = bitset<9>(config).to_string();
+    //now have the bitstring representing the configuration, let first (most sig bit) represent (2,2) and last (least sig bit) represent (0,0)
+    example.setAllUp(); //everything is set to up
+    for(int row = 0; row < 3; row ++){
+      for(int col = 0; col < 3; col++){
+	int strIdx = 9 - (row*3 + col) - 1; // (2,2) -> idx = 0 -> most significant
+	int bitval = stoi(to_string(bitstring[strIdx])) - 48;
+        if(bitval == 1) example.configuration[row][col] = bitval;
+	else example.configuration[row][col] = -1;
+      }
+    }
+    //now the example is set to the correct configuration, record the energy
+    energies.push_back(example.getEnergy());
+  }
+  writeArrToFile(filename, energies);
+  
+}
+
+
 
 
 

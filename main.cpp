@@ -12,4 +12,5 @@ int main(){
   //example.simulate(100, 0.1);
  cout << "average magnetization over a lot of trials: " <<  example.simulateMag(1, 100000, 0.1) << endl;
   example.reset();
+  Ising::makeConfigMap();
 }
