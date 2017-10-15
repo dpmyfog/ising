@@ -42,6 +42,7 @@ class Ising {
   static void writeArrToFile(string filename, vector<float> myvec);
  
   static void makeConfigMap();
+  static void testConfigMap();
   
 
 };

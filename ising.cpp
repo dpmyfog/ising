@@ -80,7 +80,7 @@ int Ising::getNeighborSpin(int row, int col, int direction){
     int tgtRow = row - 1;	//go to row above 
     int tgtCol = col;		//column still same			
     if(tgtRow < 0)
-      return 0;	//out of bounds
+      return configuration[this->size - 1][tgtCol];	//out of bounds, use periodic BCs
     else 
       return configuration[tgtRow][tgtCol];
     
@@ -88,15 +88,15 @@ int Ising::getNeighborSpin(int row, int col, int direction){
     int tgtRow = row;
     int tgtCol = col + 1;
     if(tgtCol >= this->size)
-      return 0;
+      return configuration[tgtRow][0];
     else 
       return configuration[tgtRow][tgtCol];
     
   } else if(direction == 2){ //south
     int tgtRow = row + 1; 	//go to row below
     int tgtCol = col;		//column still same
-    if(tgtRow >= this->size) 
-      return 0;
+    if(tgtRow >= this->size) //periodic BCs
+      return configuration[0][tgtCol];
     else
       return configuration[tgtRow][tgtCol];
     
@@ -104,7 +104,7 @@ int Ising::getNeighborSpin(int row, int col, int direction){
     int tgtRow = row;
     int tgtCol = col - 1;
     if(tgtCol < 0) 
-      return 0;
+      return configuration[tgtRow][this->size - 1];
     else
       return configuration[tgtRow][tgtCol];
     
@@ -181,14 +181,19 @@ void Ising::simulate(int timesteps, float beta){
     int randCol = rand()%size;
     float probFlip = probToFlip(randRow, randCol, beta);
     //cout << "probability to flip " << probFlip << endl;
-    float randomNumber = rand()/(RAND_MAX + 1.);
+    float randomNumber = (float)rand()/(float)(RAND_MAX);
+    cout << randomNumber << endl;
     if(randomNumber <= probFlip){ //flip spin
       flipSpin(randRow, randCol);
+      cout << "flipped!" << endl;
       counter++;
-    }
+      
+     }
     else{
       //do nothing
+      
     }
+    
     //cout << "Magnetization Sq: " << calculateMagSq() << endl;
     
     
@@ -242,7 +247,7 @@ void Ising::recordSnapshot(string filename){
 
 void Ising::makeConfigMap(){
   Ising example(3, 1);
-  string filename = "configurationMap";
+  string filename = "configurationMapBoltzmann";
   vector<float> energies;
   for(int config = 0; config < 512; config++){
     string bitstring = bitset<9>(config).to_string();
@@ -257,10 +262,80 @@ void Ising::makeConfigMap(){
       }
     }
     //now the example is set to the correct configuration, record the energy
-    energies.push_back(example.getEnergy());
+    //energies.push_back(exp(-1*example.getEnergy()));
+    energies.push_back(exp(-0.25 *example.getEnergy())); //beta*J = 1
   }
   writeArrToFile(filename, energies);
   
+}
+
+void Ising::testConfigMap(){
+  vector<float> endStates5;
+  vector<float> endStates50;
+  vector<float> endStates500;
+  Ising example(3,1);
+  //endStates now stores the number of times a configuration gets landed on. This should be the same as the configurationMap from before.
+  for(int config = 0; config < 512; config++){
+    endStates5.push_back(0);
+    endStates50.push_back(0);
+    endStates500.push_back(0);
+  }
+
+  //simulate for a while
+  //calculate binary state number associated with config
+  //increment array indexed with that state
+  for(int rep = 0; rep < 10000; rep++){
+    cout << "began with rep = " << rep << endl;
+    example.setAllUp();
+    example.simulate(5, 0.25);
+    example.printConfig();
+    int config = 0;
+    for(int row = 0; row < 3; row++){
+      for(int col = 0; col < 3; col++){
+	int exponent = (row*3 + col);
+	int base;
+	if(example.configuration[row][col] == 1)
+	  base = 1;
+	else
+	  base = 0;
+	config += base*pow(2, exponent);
+      }
+    }
+    cout << "incremented " << config << "th spot" << endl;
+    cout << rep << endl;
+    endStates5[config]++;
+  }
+  writeArrToFile("endStates5", endStates5);
+  /*
+  for(int rep = 0; rep < 10000; rep++){
+    example.setAllUp();
+    example.simulate(50, 0.25);
+    int config = 0;
+    for(int row = 0; row < 3; row++){
+      for(int col = 0; col < 3; col++){
+	int exponent = row*3 + col;
+	config += pow(2, exponent);
+      }
+    }
+    endStates50[config]++;
+  }
+  writeArrToFile("endStates50", endStates50);
+  */
+  /*
+  for(int rep = 0; rep < 10000; rep++){
+    example.setAllUp();
+    example.simulate(500, 1);
+    int config = 0;
+    for(int row = 0; row < 3; row++){
+      for(int col = 0; col < 3; col++){
+	int exponent = row*3 + col;
+	config += pow(2, exponent);
+      }
+    }
+    endStates500[config]++;
+  }
+  writeArrToFile("endStates500", endStates500);
+  */
 }
 
 
