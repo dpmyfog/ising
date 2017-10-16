@@ -110,7 +110,7 @@ class InputClass
   }
   void Read(ifstream &infile)
   { 
-    cerr<<"Reading input"<<endl;
+    //cerr<<"Reading input"<<endl;
     tree=new InputTree();
     tree->name="root";
     InputTree *currentTree;
@@ -151,7 +151,7 @@ class InputClass
       
 
     }
-    cerr<<"done Reading input"<<endl;
+    //cerr<<"done Reading input"<<endl;
   }
   
   

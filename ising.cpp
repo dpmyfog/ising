@@ -188,11 +188,9 @@ void Ising::simulate(int timesteps, float beta){
     if(randomNumber <= probFlip){ //flip spin
       flipSpin(randRow, randCol);
       //cout << "flipped!" << endl;
-      counter++;
+      
     }
-    else{
-      //do nothing
-    }    
+    counter++;    
     //cout << "Magnetization Sq: " << calculateMagSq() << endl;  
   }
   //printConfig();
@@ -225,12 +223,12 @@ void Ising::parallelSimulate(int timesteps, float beta){
       int row = get<0>(tup);
       int col = get<1>(tup);
       float probFlip = probToFlip(row, col, beta);
-      cout << "probability to flip " << probFlip << endl;
+      //cout << "probability to flip " << probFlip << endl;
       float randomNumber = (float)rand()/(float)(RAND_MAX);
-      cout << randomNumber << endl;
+      //cout << randomNumber << endl;
       if(randomNumber <= probFlip){ //flip spin
 	flipSpin(row, col);
-	cout << "flipped (" << row << "," << col << ")!" << endl;
+	//cout << "flipped (" << row << "," << col << ")!" << endl;
       }
     }
 #pragma omp barrier
@@ -243,7 +241,7 @@ void Ising::parallelSimulate(int timesteps, float beta){
       //cout << randomNumber << endl;
       if(randomNumber <= probFlip){ //flip spin
 	flipSpin(row, col);
-	cout << "flipped (" << row << "," << col << ")!" << endl;
+	//cout << "flipped (" << row << "," << col << ")!" << endl;
       }
     }
   }
@@ -274,8 +272,9 @@ float Ising::simulateMag(int timestep, int samples, float beta){
 void Ising::simFromFile(string infilename){ //we'll always run 2*size^2 times
   InputClass input;
   ifstream inputFile;
-  cout << "in simfromfile using " << infilename << endl;
-  inputFile.open("inputfiles/" + infilename);
+  //cout << "in simfromfile using " << infilename << endl;
+  inputFile.open(infilename);
+  if(!inputFile) cout << "could not read file" << endl;
   input.Read(inputFile);
   double beta=input.toDouble(input.GetVariable("beta"));
   int size=input.toInteger(input.GetVariable("Lx"));
@@ -305,7 +304,7 @@ void Ising::produceInputFile(string filename, float beta, int size){
   myfile << "beta=" << beta << endl;
   myfile << "Lx=" << size << endl;
   myfile << "Ly=" << size << endl;
-  myfile << "outFile=" << outfilename;
+  myfile << "outFile=outfiles/" << outfilename;
 }
 
 void Ising::recordSnapshot(string filename){
@@ -337,7 +336,7 @@ void Ising::makeConfigMap(){
     }
     //now the example is set to the correct configuration, record the energy
     //energies.push_back(exp(-1*example.getEnergy()));
-    energies.push_back(exp(-0.25 *example.getEnergy())); //beta*J = 1
+    energies.push_back(exp(-0.25 *example.getEnergy())); //beta*J = 0.25
   }
   writeArrToFile(filename, energies);
   
@@ -381,7 +380,7 @@ void Ising::testConfigMap(){
   }
   writeArrToFile("endStates5", endStates5);
   
-  for(int rep = 0; rep < 1000; rep++){
+  for(int rep = 0; rep < 10000; rep++){
     example.setAllUp();
     example.simulate(50, 0.25);
     int config = 0;
@@ -402,9 +401,9 @@ void Ising::testConfigMap(){
   writeArrToFile("endStates50", endStates50);
   
   
-  for(int rep = 0; rep < 1000; rep++){
+  for(int rep = 0; rep < 10000; rep++){
     example.setAllUp();
-    example.simulate(500, 1);
+    example.simulate(500, 0.25);
     int config = 0;
     int base = 0;
     for(int row = 0; row < 3; row++){
