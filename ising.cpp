@@ -8,7 +8,8 @@
 #include <random>
 #include <fstream>
 #include <bitset>
-
+#include <tuple>
+#include "input.h"
 
 
 #include "ising.h"
@@ -173,33 +174,79 @@ float Ising::probToFlip(int row, int col, float beta){
 
 void Ising::simulate(int timesteps, float beta){
   //cout << "got into simulate" << endl;
-  int counter;
+  int counter = 0;
   
   while(counter < timesteps){
     //cout << "in first while" << endl;
+    //cout << "counter: " <<  counter << endl;
     int randRow = rand()%size;
     int randCol = rand()%size;
     float probFlip = probToFlip(randRow, randCol, beta);
     //cout << "probability to flip " << probFlip << endl;
     float randomNumber = (float)rand()/(float)(RAND_MAX);
-    cout << randomNumber << endl;
+    //cout << randomNumber << endl;
     if(randomNumber <= probFlip){ //flip spin
       flipSpin(randRow, randCol);
-      cout << "flipped!" << endl;
+      //cout << "flipped!" << endl;
       counter++;
-      
-     }
+    }
     else{
       //do nothing
-      
-    }
-    
-    //cout << "Magnetization Sq: " << calculateMagSq() << endl;
-    
-    
+    }    
+    //cout << "Magnetization Sq: " << calculateMagSq() << endl;  
   }
   //printConfig();
+}
 
+void Ising::parallelSimulate(int timesteps, float beta){
+  //build a and b grids
+  vector<tuple<int, int>> aGrid;
+  vector<tuple<int, int>> bGrid;
+  //these will contain pointers to the spins in the actual configuration, so we can play with them
+  for(int row = 0; row < size; row++){
+    for(int col = 0; col < size; col++){
+      if(((row + col) % 2) == 0){
+	tuple<int, int> evenTuple(row, col);
+	aGrid.push_back(evenTuple);
+      }
+      else{
+	tuple<int, int> oddTuple(row, col);
+	bGrid.push_back(oddTuple);
+	
+      }
+    }
+  }
+
+  //now aGrid contains pointers to all spins with even indexSum
+  //bGrid contains pointers to all spins with odd indexSum
+  for(int steps = 0; steps < timesteps; steps++){
+#pragma omp parallel for
+    for(tuple<int, int> tup: aGrid){
+      int row = get<0>(tup);
+      int col = get<1>(tup);
+      float probFlip = probToFlip(row, col, beta);
+      cout << "probability to flip " << probFlip << endl;
+      float randomNumber = (float)rand()/(float)(RAND_MAX);
+      cout << randomNumber << endl;
+      if(randomNumber <= probFlip){ //flip spin
+	flipSpin(row, col);
+	cout << "flipped (" << row << "," << col << ")!" << endl;
+      }
+    }
+#pragma omp barrier
+    for(tuple<int, int> tup: bGrid){
+      int row = get<0>(tup);
+      int col = get<1>(tup);
+      float probFlip = probToFlip(row, col, beta);
+      //cout << "probability to flip " << probFlip << endl;
+      float randomNumber = (float)rand()/(float)(RAND_MAX);
+      //cout << randomNumber << endl;
+      if(randomNumber <= probFlip){ //flip spin
+	flipSpin(row, col);
+	cout << "flipped (" << row << "," << col << ")!" << endl;
+      }
+    }
+  }
 }
 
 float Ising::simulateMag(int timestep, int samples, float beta){
@@ -224,6 +271,23 @@ float Ising::simulateMag(int timestep, int samples, float beta){
 }
 
 
+void Ising::simFromFile(string infilename){ //we'll always run 2*size^2 times
+  InputClass input;
+  ifstream inputFile;
+  cout << "in simfromfile using " << infilename << endl;
+  inputFile.open("inputfiles/" + infilename);
+  input.Read(inputFile);
+  double beta=input.toDouble(input.GetVariable("beta"));
+  int size=input.toInteger(input.GetVariable("Lx"));
+  int numSteps = 2*size*size;
+  string outFile = input.GetVariable("outFile");
+    
+  Ising model(size, 1);
+  model.parallelSimulate(numSteps, beta);
+  model.recordSnapshot(outFile);
+  
+}
+
 void Ising::writeArrToFile(string filename, vector<float> myvec){
   ofstream myfile;
   myfile.open(filename);
@@ -232,6 +296,16 @@ void Ising::writeArrToFile(string filename, vector<float> myvec){
   }
   myfile.close();
   
+}
+
+void Ising::produceInputFile(string filename, float beta, int size){
+  ofstream myfile;
+  myfile.open(filename);
+  string outfilename = "out_L" + to_string(size) + "_" + to_string(beta);
+  myfile << "beta=" << beta << endl;
+  myfile << "Lx=" << size << endl;
+  myfile << "Ly=" << size << endl;
+  myfile << "outFile=" << outfilename;
 }
 
 void Ising::recordSnapshot(string filename){
@@ -293,7 +367,7 @@ void Ising::testConfigMap(){
     for(int row = 0; row < 3; row++){
       for(int col = 0; col < 3; col++){
 	int exponent = (row*3 + col);
-	int base;
+	int base = 0;
 	if(example.configuration[row][col] == 1)
 	  base = 1;
 	else
@@ -306,36 +380,47 @@ void Ising::testConfigMap(){
     endStates5[config]++;
   }
   writeArrToFile("endStates5", endStates5);
-  /*
-  for(int rep = 0; rep < 10000; rep++){
+  
+  for(int rep = 0; rep < 1000; rep++){
     example.setAllUp();
     example.simulate(50, 0.25);
     int config = 0;
+    int base = 0;
     for(int row = 0; row < 3; row++){
       for(int col = 0; col < 3; col++){
 	int exponent = row*3 + col;
-	config += pow(2, exponent);
+	int base = 0;
+	if(example.configuration[row][col] == 1)
+	  base = 1;
+	else
+	  base = 0;
+	config += base*pow(2, exponent);
       }
     }
     endStates50[config]++;
   }
   writeArrToFile("endStates50", endStates50);
-  */
-  /*
-  for(int rep = 0; rep < 10000; rep++){
+  
+  
+  for(int rep = 0; rep < 1000; rep++){
     example.setAllUp();
     example.simulate(500, 1);
     int config = 0;
+    int base = 0;
     for(int row = 0; row < 3; row++){
       for(int col = 0; col < 3; col++){
 	int exponent = row*3 + col;
-	config += pow(2, exponent);
+        if(example.configuration[row][col] == 1)
+	  base = 1;
+	else
+	  base = 0;
+	config += base*pow(2, exponent);
       }
     }
     endStates500[config]++;
   }
   writeArrToFile("endStates500", endStates500);
-  */
+  
 }
 
 
