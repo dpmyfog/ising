@@ -60,6 +60,14 @@ void Ising::setAllUp(){
   }
 }
 
+void Ising::setAllDown(){
+  for(int i = 0; i < size; i++){
+    for(int j = 0; j < size; j++){
+      configuration[i][j] = -1;
+    }
+  }
+}
+
 void Ising::reset(){
   srand(time(NULL));
   for(int i = 0; i < size; i++){
@@ -225,12 +233,12 @@ void Ising::parallelSimulate(int timesteps, float beta){
       int row = get<0>(tup);
       int col = get<1>(tup);
       float probFlip = probToFlip(row, col, beta);
-      cout << "probability to flip " << probFlip << endl;
+      //cout << "probability to flip " << probFlip << endl;
       float randomNumber = (float)rand()/(float)(RAND_MAX);
-      cout << randomNumber << endl;
+      //cout << randomNumber << endl;
       if(randomNumber <= probFlip){ //flip spin
 	flipSpin(row, col);
-	cout << "flipped (" << row << "," << col << ")!" << endl;
+	//cout << "flipped (" << row << "," << col << ")!" << endl;
       }
     }
 #pragma omp barrier
@@ -243,7 +251,7 @@ void Ising::parallelSimulate(int timesteps, float beta){
       //cout << randomNumber << endl;
       if(randomNumber <= probFlip){ //flip spin
 	flipSpin(row, col);
-	cout << "flipped (" << row << "," << col << ")!" << endl;
+	//cout << "flipped (" << row << "," << col << ")!" << endl;
       }
     }
   }
@@ -271,20 +279,27 @@ float Ising::simulateMag(int timestep, int samples, float beta){
 }
 
 
-void Ising::simFromFile(string infilename){ //we'll always run 2*size^2 times
+float Ising::simFromFile(string infilename){ //we'll always run 2*size^2 times
   InputClass input;
   ifstream inputFile;
   cout << "in simfromfile using " << infilename << endl;
-  inputFile.open("inputfiles/" + infilename);
+  inputFile.open(infilename);
   input.Read(inputFile);
   double beta=input.toDouble(input.GetVariable("beta"));
   int size=input.toInteger(input.GetVariable("Lx"));
   int numSteps = 2*size*size;
   string outFile = input.GetVariable("outFile");
-    
+
+  string magSqFilename = "magSqFiles/L"+ to_string(size);
+  
   Ising model(size, 1);
   model.parallelSimulate(numSteps, beta);
   model.recordSnapshot(outFile);
+
+
+  return model.calculateMagSq();
+  
+  
   
 }
 
@@ -301,7 +316,7 @@ void Ising::writeArrToFile(string filename, vector<float> myvec){
 void Ising::produceInputFile(string filename, float beta, int size){
   ofstream myfile;
   myfile.open(filename);
-  string outfilename = "out_L" + to_string(size) + "_" + to_string(beta);
+  string outfilename = "outfiles/out_L" + to_string(size) + "_" + to_string(beta);
   myfile << "beta=" << beta << endl;
   myfile << "Lx=" << size << endl;
   myfile << "Ly=" << size << endl;
@@ -403,7 +418,7 @@ void Ising::testConfigMap(){
   
   
   for(int rep = 0; rep < 1000; rep++){
-    example.setAllUp();
+    example.reset();
     example.simulate(500, 1);
     int config = 0;
     int base = 0;

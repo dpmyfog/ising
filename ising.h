@@ -38,10 +38,13 @@ class Ising {
   
   void recordSnapshot(string filename);
   void setAllUp();
+  void setAllDown();
+  void setFromFile(string filename);
   void reset();
+  
 
   
-  static void simFromFile(string filename);
+  static float simFromFile(string filename);
   static void writeArrToFile(string filename, vector<float> myvec);
   static void produceInputFile(string filename, float beta, int size);
 
