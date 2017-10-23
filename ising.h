@@ -41,7 +41,8 @@ class Ising {
   void setAllDown();
   void setFromFile(string filename);
   void reset();
-  
+
+  vector<vector<int>> coarseGrain();
 
   
   static float simFromFile(string filename);

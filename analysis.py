@@ -1,35 +1,60 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import stats
+import sys
 
-def hist_configs():
-        '''
-        theoHistogramArray = np.loadtxt('configurationMap')
-        expHistogramArray_5 = np.loadtxt('endStates5')
-        expHistogramArray_50 = np.loadtxt('endStates50')
-        expHistogramArray_500 = np.loadtxt('endStates500')
-        domain = range(0, 512)
-        '''
+def histogram_list(filename):
+        hist = np.loadtxt(filename)
+        dict = {}
+        for idx in range(len(hist)):
+                dict[hist[idx]] = 0
+        for idx in range(len(hist)):
+                dict[hist[idx]] += 1
+
+        return dict.keys(), dict.values()
+
+def plot_hist(filename):
+        keys, vals = histogram_list(filename)
+        plt.title(filename)
+        plt.plot(keys, vals, 'r.')
 
 
-        magSqs = np.loadtxt("magSqFiles/magSq20")
+def get_stats(filename):
+        list = np.loadtxt(filename)
+        return stats.Stats(list)
 
-        betaspace = np.linspace(0.10, 0.95, 181)
-        
-        plt.plot(betaspace, magSqs)
-        plt.xlabel('beta * J')
-        plt.ylabel('<m^2>')
-        plt.show()
-        
+#print os.listdir("magSqFiles")
 
-        #plt.plot(domain, theoHistogramArray)
-        #plt.figure()
-        #plt.plot(domain, expHistogramArray_5)
-        #plt.plot(domain, expHistogramArray_50)
-        #plt.plot(domain, expHistogramArray_500)
-        #plt.show()
-        #plt.matshow(np.loadtxt('exampleSnapshot'))
-        #plt.show()
+actualMagStDev = get_stats("coarsemagnetizations/_single_mag_high")[2]
 
-hist_configs()
-        
-	
+difference = 100000000
+retVal = ""
+
+for f in os.listdir("magSqFiles/"):
+        currDifference = abs(get_stats("magSqFiles/" + f)[2] - actualMagStDev)
+        if currDifference < difference:
+                difference = currDifference
+                retVal = f
+print("coarseGrained J: " + str(0.35) + " native J: " + retVal)
+
+domain = [.1, .15, .2, .25, .3, .35, .4,  .55, .6, .65, .7, .75, .8]
+rng = [0.06, 0.2, 0.18, 0.25, 0.27, 0.27, 0.31, 0.43, 0.4, 0.22, 0.34, 0.44, 0.34]
+
+plt.plot(domain, rng, 'r.')
+plt.show()
+       
+#plot_hist("magSqFiles")
+#print("===========================")
+#print get_stats("coarsemagnetizations/_single_mag_high")[2],
+
+#plot_hist("coarsemagnetizations/_single_mag_low")
+
+
+
+
+
+#plt.legend()
+
+#plt.show()
+

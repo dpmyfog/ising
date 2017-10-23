@@ -240,6 +240,7 @@ void Ising::parallelSimulate(int timesteps, float beta){
       }
     }
 #pragma omp barrier
+#pragma omp parallel for
     for(tuple<int, int> tup: bGrid){
       int row = get<0>(tup);
       int col = get<1>(tup);
@@ -280,14 +281,10 @@ float Ising::simulateMag(int timestep, int samples, float beta){
 float Ising::simFromFile(string infilename){ //we'll always run 2*size^2 times
   InputClass input;
   ifstream inputFile;
-<<<<<<< HEAD
-  cout << "in simfromfile using " << infilename << endl;
-  inputFile.open(infilename);
-=======
+
   //cout << "in simfromfile using " << infilename << endl;
   inputFile.open(infilename);
   if(!inputFile) cout << "could not read file" << endl;
->>>>>>> b69a630d82bb18885c0b74a88646fad370585a2e
   input.Read(inputFile);
   double beta=input.toDouble(input.GetVariable("beta"));
   int size=input.toInteger(input.GetVariable("Lx"));
@@ -316,6 +313,8 @@ void Ising::writeArrToFile(string filename, vector<float> myvec){
   myfile.close();
   
 }
+
+
 
 void Ising::produceInputFile(string filename, float beta, int size){
   ofstream myfile;
@@ -421,15 +420,10 @@ void Ising::testConfigMap(){
   writeArrToFile("endStates50", endStates50);
   
   
-<<<<<<< HEAD
-  for(int rep = 0; rep < 1000; rep++){
-    example.reset();
-    example.simulate(500, 1);
-=======
+
   for(int rep = 0; rep < 10000; rep++){
     example.setAllUp();
     example.simulate(500, 0.25);
->>>>>>> b69a630d82bb18885c0b74a88646fad370585a2e
     int config = 0;
     int base = 0;
     for(int row = 0; row < 3; row++){
@@ -449,6 +443,39 @@ void Ising::testConfigMap(){
 }
 
 
+vector<vector<int>> Ising::coarseGrain(){
+  vector<vector<int>> newConfig = configuration;
+  int newSize = size/3;
+  newConfig.resize(newSize);
+  for(int i = 0; i < newSize; i++){
+    newConfig[i].resize(newSize);
+  }
 
+  //want to coarse grain by processing top left cell
+  for(int coarserow = 0; coarserow < newSize; coarserow++){
+    for(int coarsecol = 0; coarsecol < newSize; coarsecol++){
+      int numUp = 0;
+      int numDown = 0;
 
+      int startRowIdx = coarserow*3;
+      int endRowIdx = coarserow*3 + 3;
 
+      int startColIdx = coarsecol*3;
+      int endColIdx = coarsecol*3 + 3;
+
+      for(int row = startRowIdx; row < endRowIdx; row++){
+	for(int col = startColIdx; col < endColIdx; col++){
+	  if(configuration[row][col] == 1) numUp++;
+	  else numDown++;
+	}
+      }
+
+      if(numUp > numDown) newConfig[coarserow][coarsecol] = 1;
+      else newConfig[coarserow][coarsecol] = -1;
+    }
+  }
+
+  return newConfig;
+
+  
+}
